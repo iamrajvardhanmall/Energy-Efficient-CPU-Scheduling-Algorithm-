@@ -18,7 +18,7 @@
         optimize energy usage.
     c.) Test the algorithm in simulated environments before deploying it on actual hardware.
 
-2.) Module - Wise Breakdown:-
+2.) Module - Wise Breakdown:- 
     Module 1: Algorithm Design and Implementation
         Purpose: Develop the core CPU scheduling algorithm that minimizes energy consumption.
         Role: This module will handle task scheduling, prioritize tasks based on energy 
