@@ -33,5 +33,5 @@
        Role: This module will collect and visualize metrics such as energy consumption, task 
        completion time, and CPU utilization.
 
- 3.) FunctionalitiesL:-
+ 3.) Functionalities:-
      Module 1:
