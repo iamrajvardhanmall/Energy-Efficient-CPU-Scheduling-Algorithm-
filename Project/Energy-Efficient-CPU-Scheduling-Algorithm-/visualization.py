@@ -1,33 +1,26 @@
+# Module 3: Performance Analysis and Visualization (Python)
+# This module analyzes and visualizes the results of the simulation.
+
+
+
+
 import matplotlib.pyplot as plt
 
-# Example data (replace with actual simulation results)
-tasks = [1, 2, 3, 4, 5]
-energy_consumed = [15, 10, 20, 12, 18]  # Energy consumed per task
-completion_time = [5, 3, 7, 4, 6]      # Completion time per task
+# Sample data (replace with actual simulation results)
+algorithms = ["Round Robin", "Energy-Efficient RR"]
+energy_consumption = [120, 80]  # Example energy consumption values
+task_completion_times = [50, 45]  # Example task completion times
 
 # Plot energy consumption
 plt.figure(figsize=(10, 5))
-plt.bar(tasks, energy_consumed, color='blue')
-plt.title("Energy Consumption per Task")
-plt.xlabel("Task ID")
-plt.ylabel("Energy Consumed (units)")
-plt.show()
-
-# Plot completion time
-plt.figure(figsize=(10, 5))
-plt.bar(tasks, completion_time, color='yellow')
-plt.title("Task Completion Time")
-plt.xlabel("Task ID")
-plt.ylabel("Completion Time (units)")
-plt.show()
-
-# Compare with traditional scheduling (example)
-traditional_energy = [20, 15, 25, 18, 22]  # Example data
-plt.figure(figsize=(10, 5))
-plt.bar(tasks, energy_consumed, color='blue', label='Energy-Efficient Scheduler')
-plt.bar(tasks, traditional_energy, color='red', alpha=0.5, label='Traditional Scheduler')
+plt.bar(algorithms, energy_consumption, color=["blue", "green"])
 plt.title("Energy Consumption Comparison")
-plt.xlabel("Task ID")         
 plt.ylabel("Energy Consumed (units)")
-plt.legend()
+plt.show()
+
+# Plot task completion times
+plt.figure(figsize=(10, 5))
+plt.bar(algorithms, task_completion_times, color=["orange", "red"])
+plt.title("Task Completion Time Comparison")
+plt.ylabel("Completion Time (units)")
 plt.show()
