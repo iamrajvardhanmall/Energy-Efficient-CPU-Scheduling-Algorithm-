@@ -3,24 +3,20 @@
 
 
 
-
+# visualization.py
 import matplotlib.pyplot as plt
+import numpy as np
 
-# Sample data (replace with actual simulation results)
-algorithms = ["Round Robin", "Energy-Efficient RR"]
-energy_consumption = [120, 80]  # Example energy consumption values
-task_completion_times = [50, 45]  # Example task completion times
+def visualize_power_consumption(completed_processes, cpu):
+    """
+    Visualizes power consumption over time.
+    """
+    time_points = np.arange(0, max(p.finish_time for p in completed_processes) + 1)
+    power_consumption = [cpu.base_power * (cpu.current_frequency / cpu.max_frequency) for _ in time_points]
 
-# Plot energy consumption
-plt.figure(figsize=(10, 5))
-plt.bar(algorithms, energy_consumption, color=["blue", "green"])
-plt.title("Energy Consumption Comparison")
-plt.ylabel("Energy Consumed (units)")
-plt.show()
-
-# Plot task completion times
-plt.figure(figsize=(10, 5))
-plt.bar(algorithms, task_completion_times, color=["orange", "red"])
-plt.title("Task Completion Time Comparison")
-plt.ylabel("Completion Time (units)")
-plt.show()
+    plt.plot(time_points, power_consumption, label="Power Consumption")
+    plt.xlabel("Time")
+    plt.ylabel("Power (Watts)")
+    plt.title("CPU Power Consumption Over Time")
+    plt.legend()
+    plt.show()
