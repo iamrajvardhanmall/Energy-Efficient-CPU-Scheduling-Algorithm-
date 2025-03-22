@@ -1,4 +1,5 @@
 Project Overview
+Energy-efficient CPU scheduling algorithm based on Round Robin (RR) with Dynamic Voltage and Frequency Scaling (DVFS) and idle state management. This implementation includes task scheduling, CPU simulation, and energy consumption analysis.
 1.) Goals:
 
 ---> Develop a CPU scheduling algorithm that minimizes energy consumption while maintaining or improving system performance.
