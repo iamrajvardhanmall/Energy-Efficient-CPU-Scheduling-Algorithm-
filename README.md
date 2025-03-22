@@ -1,43 +1,24 @@
-Execution Plan
-1.) Run the C++ Scheduler:
+Project Overview
+1.) Goals:
 
-  Compile and run the C++ code to test the EE-RR algorithm.
+---> Develop a CPU scheduling algorithm that minimizes energy consumption while maintaining or improving system performance.
 
-  Observe the energy consumption and task completion logs.
+---> Ensure the algorithm is suitable for mobile and embedded systems, where power efficiency is critical.
 
-2.) Run the Python Simulation:
+---> Optimize the algorithm to balance energy savings and computational efficiency.
 
-  Execute the Python simulation to emulate a mobile/embedded system.
+2.) Expected Outcomes:
 
-  Collect energy consumption and performance metrics.
+---> A functional CPU scheduling algorithm that reduces energy consumption.
 
-3.) Visualize Results:
+---> A simulation or prototype demonstrating the algorithm's effectiveness in a controlled environment.
 
-  Use the Python visualization script to compare energy consumption and performance.
+---> Documentation and analysis of the algorithm's performance and energy savings.
 
-4.) Optimize:
+3.) Scope:
 
-  Refine the algorithm based on simulation results.
+---> The project will focus on designing and implementing the algorithm, testing it in a simulated environment, and analyzing its performance.
 
-  Test with different workloads and hardware configurations.
+---> The algorithm will be tested on a variety of workloads typical of mobile and embedded systems.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+---> The project will not involve hardware-level modifications but will focus on software-based scheduling techniques.
