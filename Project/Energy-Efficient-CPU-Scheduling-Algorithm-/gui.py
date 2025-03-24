@@ -1,135 +1,600 @@
+# gui.py
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import numpy as np
+import json
 from scheduler import Process, CPU, round_robin_scheduling
+from matplotlib.ticker import MaxNLocator
 
-# Function to run the simulation and display results
-def run_simulation():
-    try:
-        # Get process details from the table
-        processes = []
-        for row in process_table.get_children():
-            values = process_table.item(row)["values"]
-            pid, arrival_time, burst_time, priority = map(int, values)
-            processes.append(Process(pid, arrival_time, burst_time, priority))
+class EnergyEfficientSchedulerGUI:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Energy-Efficient CPU Scheduler")
+        self.root.geometry("1400x900")
+        self.style = ttk.Style()
+        self.style.theme_use('clam')
+        self.configure_styles()
+        
+        self.create_widgets()
+        self.setup_layout()
+        
+        # Initialize empty process list
+        self.processes = []
+        
+    def configure_styles(self):
+        """Configure custom styles for the GUI"""
+        self.style.configure('TFrame', background='#f5f5f5')
+        self.style.configure('TLabel', background='#f5f5f5', font=('Segoe UI', 10))
+        self.style.configure('TButton', font=('Segoe UI', 10), padding=5)
+        self.style.configure('Header.TLabel', font=('Segoe UI', 12, 'bold'))
+        self.style.configure('Treeview', rowheight=25, font=('Segoe UI', 9))
+        self.style.map('TButton',
+                      foreground=[('active', 'black'), ('disabled', 'gray')],
+                      background=[('active', '#e1e1e1'), ('disabled', '#f5f5f5')])
+        self.style.configure('TNotebook', background='#f5f5f5')
+        self.style.configure('TNotebook.Tab', font=('Segoe UI', 10, 'bold'))
+    
+    def create_widgets(self):
+        """Create all GUI widgets"""
+        # Main frames
+        self.left_frame = ttk.Frame(self.root, padding=10)
+        self.right_frame = ttk.Frame(self.root, padding=10)
+        
+        # Process input section
+        self.input_frame = ttk.LabelFrame(self.left_frame, text="Process Input", padding=10)
+        self.create_process_input_widgets()
+        
+        # Simulation controls
+        self.control_frame = ttk.LabelFrame(self.left_frame, text="Simulation Controls", padding=10)
+        self.create_control_widgets()
+        
+        # Results display
+        self.result_frame = ttk.LabelFrame(self.right_frame, text="Results", padding=10)
+        self.create_result_widgets()
+        
+        # Visualization frames
+        self.visualization_frame = ttk.LabelFrame(self.right_frame, text="Visualizations", padding=10)
+        self.create_visualization_widgets()
+        
+        # Status bar
+        self.status_var = tk.StringVar()
+        self.status_var.set("Ready")
+        self.status_bar = ttk.Label(self.root, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W)
+    
+    def create_process_input_widgets(self):
+        """Create widgets for process input"""
+        # Process table
+        columns = ("PID", "Arrival Time", "Burst Time", "Priority")
+        self.process_table = ttk.Treeview(
+            self.input_frame, 
+            columns=columns, 
+            show="headings", 
+            height=8,
+            selectmode='browse'
+        )
+        
+        # Configure columns
+        col_widths = [50, 90, 80, 70]
+        for col, width in zip(columns, col_widths):
+            self.process_table.heading(col, text=col)
+            self.process_table.column(col, width=width, anchor=tk.CENTER)
+        
+        # Scrollbar for table
+        scrollbar = ttk.Scrollbar(self.input_frame, orient=tk.VERTICAL, command=self.process_table.yview)
+        self.process_table.configure(yscrollcommand=scrollbar.set)
+        
+        # Process entry fields
+        self.pid_var = tk.IntVar()
+        self.arrival_var = tk.IntVar()
+        self.burst_var = tk.IntVar()
+        self.priority_var = tk.IntVar(value=1)
+        
+        ttk.Label(self.input_frame, text="PID:").grid(row=1, column=0, padx=5, pady=5, sticky='e')
+        ttk.Entry(self.input_frame, textvariable=self.pid_var, width=8).grid(row=1, column=1, padx=5, pady=5)
+        
+        ttk.Label(self.input_frame, text="Arrival Time:").grid(row=1, column=2, padx=5, pady=5, sticky='e')
+        ttk.Entry(self.input_frame, textvariable=self.arrival_var, width=8).grid(row=1, column=3, padx=5, pady=5)
+        
+        ttk.Label(self.input_frame, text="Burst Time:").grid(row=2, column=0, padx=5, pady=5, sticky='e')
+        ttk.Entry(self.input_frame, textvariable=self.burst_var, width=8).grid(row=2, column=1, padx=5, pady=5)
+        
+        ttk.Label(self.input_frame, text="Priority:").grid(row=2, column=2, padx=5, pady=5, sticky='e')
+        ttk.Entry(self.input_frame, textvariable=self.priority_var, width=8).grid(row=2, column=3, padx=5, pady=5)
+        
+        # Buttons for process management
+        button_frame = ttk.Frame(self.input_frame)
+        button_frame.grid(row=3, column=0, columnspan=4, pady=10)
+        
+        ttk.Button(button_frame, text="Add Process", command=self.add_process).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Remove Selected", command=self.remove_process).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Clear All", command=self.clear_processes).pack(side=tk.LEFT, padx=5)
+        
+        # Import/export buttons
+        io_frame = ttk.Frame(self.input_frame)
+        io_frame.grid(row=4, column=0, columnspan=4, pady=5)
+        
+        ttk.Button(io_frame, text="Import Processes", command=self.import_processes).pack(side=tk.LEFT, padx=5)
+        ttk.Button(io_frame, text="Export Processes", command=self.export_processes).pack(side=tk.LEFT, padx=5)
+        
+        # Layout the table and scrollbar
+        self.process_table.grid(row=0, column=0, columnspan=4, padx=5, pady=5, sticky='nsew')
+        scrollbar.grid(row=0, column=4, sticky='ns')
+    
+    def add_process(self):
+        """Add a new process to the table"""
+        try:
+            pid = self.pid_var.get()
+            arrival = self.arrival_var.get()
+            burst = self.burst_var.get()
+            priority = self.priority_var.get()
+            
+            if pid <= 0 or arrival < 0 or burst <= 0 or priority <= 0:
+                raise ValueError("All values must be positive integers")
+            
+            # Check for duplicate PID
+            for item in self.process_table.get_children():
+                if self.process_table.item(item)['values'][0] == pid:
+                    raise ValueError(f"Process with PID {pid} already exists")
+            
+            self.process_table.insert("", "end", values=(pid, arrival, burst, priority))
+            
+            # Clear entry fields
+            self.pid_var.set("")
+            self.arrival_var.set("")
+            self.burst_var.set("")
+            
+            # Auto-increment PID
+            self.pid_var.set(pid + 1)
+            
+            self.status_var.set(f"Added process {pid}")
+        
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+            self.status_var.set("Error adding process")
+    
+    def remove_process(self):
+        """Remove selected process from the table"""
+        try:
+            selected_item = self.process_table.selection()
+            if not selected_item:
+                raise ValueError("No process selected")
+            
+            pid = self.process_table.item(selected_item)['values'][0]
+            self.process_table.delete(selected_item)
+            self.status_var.set(f"Removed process {pid}")
+        
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+            self.status_var.set("Error removing process")
+    
+    def clear_processes(self):
+        """Clear all processes from the table"""
+        for item in self.process_table.get_children():
+            self.process_table.delete(item)
+        self.status_var.set("Cleared all processes")
+    
+    def import_processes(self):
+        """Import processes from a JSON file"""
+        try:
+            filepath = filedialog.askopenfilename(
+                title="Import Processes",
+                filetypes=(("JSON files", "*.json"), ("All files", "*.*")))
+            
+            if not filepath:
+                return
+                
+            with open(filepath, 'r') as f:
+                processes = json.load(f)
+            
+            self.clear_processes()
+            for proc in processes:
+                self.process_table.insert("", "end", values=(
+                    proc['pid'], proc['arrival'], proc['burst'], proc['priority']
+                ))
+            
+            self.status_var.set(f"Imported {len(processes)} processes from {filepath}")
+        
+        except Exception as e:
+            messagebox.showerror("Import Error", str(e))
+            self.status_var.set("Error importing processes")
+    
+    def export_processes(self):
+        """Export processes to a JSON file"""
+        try:
+            processes = []
+            for item in self.process_table.get_children():
+                pid, arrival, burst, priority = self.process_table.item(item)['values']
+                processes.append({
+                    'pid': pid,
+                    'arrival': arrival,
+                    'burst': burst,
+                    'priority': priority
+                })
+            
+            if not processes:
+                raise ValueError("No processes to export")
+                
+            filepath = filedialog.asksaveasfilename(
+                title="Export Processes",
+                defaultextension=".json",
+                filetypes=(("JSON files", "*.json"), ("All files", "*.*")))
+            
+            if not filepath:
+                return
+                
+            with open(filepath, 'w') as f:
+                json.dump(processes, f, indent=2)
+            
+            self.status_var.set(f"Exported {len(processes)} processes to {filepath}")
+        
+        except Exception as e:
+            messagebox.showerror("Export Error", str(e))
+            self.status_var.set("Error exporting processes")
 
-        # Get the time quantum
-        time_quantum = int(entry_time_quantum.get())
+    def create_control_widgets(self):
+        """Create widgets for simulation controls"""
+        # Time quantum input
+        ttk.Label(self.control_frame, text="Time Quantum:").grid(row=0, column=0, padx=5, pady=5, sticky='e')
+        self.quantum_var = tk.IntVar(value=3)
+        ttk.Entry(self.control_frame, textvariable=self.quantum_var, width=8).grid(row=0, column=1, padx=5, pady=5, sticky='w')
+        
+        # CPU parameters
+        ttk.Label(self.control_frame, text="CPU Parameters", style='Header.TLabel').grid(row=1, column=0, columnspan=2, pady=10)
+        
+        # Create CPU parameter variables
+        self.base_power_var = tk.DoubleVar(value=100)
+        self.max_freq_var = tk.DoubleVar(value=3.0)
+        self.min_freq_var = tk.DoubleVar(value=1.0)
+        
+        param_labels = ["Base Power (W):", "Max Freq (GHz):", "Min Freq (GHz):"]
+        param_vars = [self.base_power_var, self.max_freq_var, self.min_freq_var]
+        
+        for i, (label, var) in enumerate(zip(param_labels, param_vars)):
+            ttk.Label(self.control_frame, text=label).grid(row=i+2, column=0, padx=5, pady=2, sticky='e')
+            ttk.Entry(self.control_frame, textvariable=var, width=8).grid(row=i+2, column=1, padx=5, pady=2, sticky='w')
+        
+        # Run button
+        ttk.Button(self.control_frame, text="Run Simulation", command=self.run_simulation).grid(
+            row=5, column=0, columnspan=2, pady=15, ipadx=20, ipady=5
+        )
+    
+    def create_result_widgets(self):
+        """Create widgets for results display"""
+        # Result table
+        columns = ("PID", "Start Time", "Finish Time", "Turnaround", "Waiting")
+        self.result_table = ttk.Treeview(
+            self.result_frame, 
+            columns=columns, 
+            show="headings", 
+            height=8,
+            selectmode='browse'
+        )
+        
+        # Configure columns
+        col_widths = [50, 80, 80, 80, 80]
+        for col, width in zip(columns, col_widths):
+            self.result_table.heading(col, text=col)
+            self.result_table.column(col, width=width, anchor=tk.CENTER)
+        
+        # Scrollbar for result table
+        scrollbar = ttk.Scrollbar(self.result_frame, orient=tk.VERTICAL, command=self.result_table.yview)
+        self.result_table.configure(yscrollcommand=scrollbar.set)
+        
+        # Metrics display
+        self.metrics_frame = ttk.Frame(self.result_frame)
+        
+        self.avg_turnaround_var = tk.StringVar(value="Average Turnaround Time: -")
+        self.avg_waiting_var = tk.StringVar(value="Average Waiting Time: -")
+        self.power_consumption_var = tk.StringVar(value="Total Power Consumption: - Joules")
+        self.idle_time_var = tk.StringVar(value="CPU Idle Time: - units")
+        self.energy_saving_var = tk.StringVar(value="Estimated Energy Savings: - %")
+        
+        metrics = [
+            self.avg_turnaround_var, 
+            self.avg_waiting_var,
+            self.power_consumption_var,
+            self.idle_time_var,
+            self.energy_saving_var
+        ]
+        
+        for metric in metrics:
+            label = ttk.Label(self.metrics_frame, textvariable=metric, font=('Segoe UI', 9))
+            label.pack(anchor=tk.W, pady=2)
+        
+        # Layout the widgets
+        self.result_table.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=5, pady=5)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.metrics_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=10)
+    
+    def create_visualization_widgets(self):
+        """Create widgets for visualizations"""
+        # Notebook for multiple tabs
+        self.visualization_notebook = ttk.Notebook(self.visualization_frame)
+        
+        # Create tabs
+        self.create_power_consumption_tab()
+        self.create_gantt_chart_tab()
+        self.create_frequency_usage_tab()
+        
+        # Pack the notebook
+        self.visualization_notebook.pack(fill=tk.BOTH, expand=True)
+    
+    def create_power_consumption_tab(self):
+        """Create power consumption visualization tab"""
+        self.power_tab = ttk.Frame(self.visualization_notebook)
+        self.power_fig, self.power_ax = plt.subplots(figsize=(10, 4), dpi=100)
+        self.power_fig.patch.set_facecolor('#f5f5f5')
+        
+        # Configure plot
+        self.power_ax.set_facecolor('#f5f5f5')
+        self.power_ax.grid(True, linestyle='--', alpha=0.6)
+        self.power_ax.set_xlabel("Time (units)", fontsize=10)
+        self.power_ax.set_ylabel("Power (Watts)", fontsize=10)
+        self.power_ax.set_title("CPU Power Consumption Over Time", fontsize=12, pad=10)
+        
+        # Create canvas and toolbar
+        self.power_canvas = FigureCanvasTkAgg(self.power_fig, master=self.power_tab)
+        self.power_toolbar = NavigationToolbar2Tk(self.power_canvas, self.power_tab)
+        self.power_toolbar.update()
+        
+        # Layout
+        self.power_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        self.visualization_notebook.add(self.power_tab, text="Power Consumption")
+    
+    def create_gantt_chart_tab(self):
+        """Create Gantt chart visualization tab"""
+        self.gantt_tab = ttk.Frame(self.visualization_notebook)
+        self.gantt_fig, self.gantt_ax = plt.subplots(figsize=(10, 4), dpi=100)
+        self.gantt_fig.patch.set_facecolor('#f5f5f5')
+        
+        # Configure plot
+        self.gantt_ax.set_facecolor('#f5f5f5')
+        self.gantt_ax.grid(True, axis='x', linestyle='--', alpha=0.6)
+        self.gantt_ax.set_xlabel("Time (units)", fontsize=10)
+        self.gantt_ax.set_ylabel("Processes", fontsize=10)
+        self.gantt_ax.set_title("Process Execution Gantt Chart", fontsize=12, pad=10)
+        
+        # Create canvas and toolbar
+        self.gantt_canvas = FigureCanvasTkAgg(self.gantt_fig, master=self.gantt_tab)
+        self.gantt_toolbar = NavigationToolbar2Tk(self.gantt_canvas, self.gantt_tab)
+        self.gantt_toolbar.update()
+        
+        # Layout
+        self.gantt_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        self.visualization_notebook.add(self.gantt_tab, text="Gantt Chart")
+    
+    def create_frequency_usage_tab(self):
+        """Create CPU frequency usage visualization tab"""
+        self.freq_tab = ttk.Frame(self.visualization_notebook)
+        self.freq_fig, self.freq_ax = plt.subplots(figsize=(10, 4), dpi=100)
+        self.freq_fig.patch.set_facecolor('#f5f5f5')
+        
+        # Configure plot
+        self.freq_ax.set_facecolor('#f5f5f5')
+        self.freq_ax.grid(True, linestyle='--', alpha=0.6)
+        self.freq_ax.set_xlabel("Time (units)", fontsize=10)
+        self.freq_ax.set_ylabel("Frequency (GHz)", fontsize=10)
+        self.freq_ax.set_title("CPU Frequency Usage Over Time", fontsize=12, pad=10)
+        
+        # Create canvas and toolbar
+        self.freq_canvas = FigureCanvasTkAgg(self.freq_fig, master=self.freq_tab)
+        self.freq_toolbar = NavigationToolbar2Tk(self.freq_canvas, self.freq_tab)
+        self.freq_toolbar.update()
+        
+        # Layout
+        self.freq_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        self.visualization_notebook.add(self.freq_tab, text="Frequency Usage")
+    
+    def setup_layout(self):
+        """Arrange widgets in the window"""
+        self.left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=False)
+        self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+        
+        # Left frame contents
+        self.input_frame.pack(fill=tk.BOTH, padx=5, pady=5, expand=False)
+        self.control_frame.pack(fill=tk.BOTH, padx=5, pady=5, expand=False)
+        
+        # Right frame contents
+        self.result_frame.pack(fill=tk.BOTH, padx=5, pady=5, expand=False)
+        self.visualization_frame.pack(fill=tk.BOTH, padx=5, pady=5, expand=True)
+        
+        # Status bar
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+    
+    def run_simulation(self):
+        """Run the scheduling simulation"""
+        try:
+            # Get process details from the table
+            processes = []
+            for row in self.process_table.get_children():
+                values = self.process_table.item(row)["values"]
+                pid, arrival_time, burst_time, priority = map(int, values)
+                processes.append(Process(pid, arrival_time, burst_time, priority))
+            
+            if not processes:
+                raise ValueError("No processes to schedule")
+            
+            # Get simulation parameters
+            time_quantum = self.quantum_var.get()
+            base_power = self.base_power_var.get()
+            max_freq = self.max_freq_var.get()
+            min_freq = self.min_freq_var.get()
+            
+            if time_quantum <= 0 or base_power <= 0 or max_freq <= 0 or min_freq <= 0:
+                raise ValueError("All parameters must be positive numbers")
+            
+            # Create CPU instance and run simulation
+            cpu = CPU(base_power=base_power, max_frequency=max_freq, min_frequency=min_freq)
+            completed_processes = round_robin_scheduling(processes.copy(), time_quantum, cpu)
+            
+            # Clear previous results
+            for row in self.result_table.get_children():
+                self.result_table.delete(row)
+            
+            # Display results
+            for process in completed_processes:
+                turnaround_time = process.finish_time - process.arrival_time
+                waiting_time = turnaround_time - process.burst_time
+                self.result_table.insert("", "end", values=(
+                    process.pid, 
+                    process.start_time, 
+                    process.finish_time,
+                    turnaround_time, 
+                    waiting_time
+                ))
+            
+            # Calculate and display metrics
+            total_turnaround = sum(p.finish_time - p.arrival_time for p in completed_processes)
+            total_waiting = sum((p.finish_time - p.arrival_time - p.burst_time) for p in completed_processes)
+            
+            self.avg_turnaround_var.set(f"Average Turnaround Time: {total_turnaround/len(completed_processes):.2f} units")
+            self.avg_waiting_var.set(f"Average Waiting Time: {total_waiting/len(completed_processes):.2f} units")
+            self.power_consumption_var.set(f"Total Power Consumption: {cpu.power_consumption:.2f} Joules")
+            self.idle_time_var.set(f"CPU Idle Time: {cpu.idle_time} units")
+            
+            # Calculate energy savings
+            baseline_power = base_power * sum(p.burst_time for p in processes)
+            energy_saving = ((baseline_power - cpu.power_consumption) / baseline_power) * 100
+            self.energy_saving_var.set(f"Estimated Energy Savings: {energy_saving:.1f}%")
+            
+            # Update visualizations
+            self.update_visualizations(completed_processes, cpu)
+            
+            self.status_var.set("Simulation completed successfully")
+        
+        except Exception as e:
+            messagebox.showerror("Simulation Error", str(e))
+            self.status_var.set("Error running simulation")
 
-        # Run the simulation
-        cpu = CPU(base_power=100, max_frequency=3.0, min_frequency=1.0)
-        completed_processes = round_robin_scheduling(processes, time_quantum, cpu)
+    def update_visualizations(self, completed_processes, cpu):
+        """Update all visualization tabs with simulation results"""
+        if not completed_processes:
+            return
+            
+        max_time = max(p.finish_time for p in completed_processes)
+        time_points = np.arange(0, max_time + 1)
+        
+        # Update power consumption plot
+        self.update_power_plot(cpu)
+        
+        # Update Gantt chart
+        self.update_gantt_chart(completed_processes)
+        
+        # Update frequency usage plot
+        self.update_frequency_plot(cpu)
+    
+    def update_power_plot(self, cpu):
+        """Update the power consumption plot"""
+        self.power_ax.clear()
+        
+        # Extract power history data
+        if not cpu.power_history:
+            return
+            
+        times, powers = zip(*cpu.power_history)
+        
+        # Plot with enhanced styling
+        self.power_ax.step(
+            times, 
+            powers, 
+            where='post',
+            label="Power Consumption",
+            color='#3498db',
+            linewidth=2
+        )
+        
+        # Configure plot
+        self.power_ax.set_facecolor('#f5f5f5')
+        self.power_ax.grid(True, linestyle='--', alpha=0.6)
+        self.power_ax.set_xlabel("Time (units)", fontsize=10)
+        self.power_ax.set_ylabel("Power (Watts)", fontsize=10)
+        self.power_ax.set_title("CPU Power Consumption Over Time", fontsize=12, pad=10)
+        self.power_ax.legend(loc='upper right')
+        self.power_ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        
+        # Redraw canvas
+        self.power_canvas.draw()
+    
+    def update_gantt_chart(self, completed_processes):
+        """Update the Gantt chart with process execution timeline"""
+        self.gantt_ax.clear()
+        
+        # Prepare data
+        pids = [f"P{p.pid}" for p in completed_processes]
+        
+        # Create color map based on priority
+        colors = ['#2ecc71' if p.priority == 1 else '#f39c12' for p in completed_processes]
+        
+        # Plot each process's execution intervals
+        for i, process in enumerate(completed_processes):
+            for start, end in process.execution_history:
+                self.gantt_ax.barh(
+                    pids[i], 
+                    end - start, 
+                    left=start, 
+                    color=colors[i],
+                    edgecolor='#34495e',
+                    height=0.6,
+                    alpha=0.8
+                )
+        
+        # Configure plot
+        self.gantt_ax.set_facecolor('#f5f5f5')
+        self.gantt_ax.grid(True, axis='x', linestyle='--', alpha=0.6)
+        self.gantt_ax.set_xlabel("Time (units)", fontsize=10)
+        self.gantt_ax.set_ylabel("Processes", fontsize=10)
+        self.gantt_ax.set_title("Process Execution Gantt Chart", fontsize=12, pad=10)
+        self.gantt_ax.invert_yaxis()
+        self.gantt_ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        
+        # Create legend for priorities
+        high_priority = plt.Rectangle((0,0), 1, 1, fc='#2ecc71', alpha=0.8)
+        low_priority = plt.Rectangle((0,0), 1, 1, fc='#f39c12', alpha=0.8)
+        self.gantt_ax.legend(
+            [high_priority, low_priority], 
+            ['High Priority', 'Low Priority'],
+            loc='upper right'
+        )
+        
+        # Redraw canvas
+        self.gantt_canvas.draw()
+    
+    def update_frequency_plot(self, cpu):
+        """Update the CPU frequency usage plot"""
+        self.freq_ax.clear()
+        
+        if not cpu.frequency_history:
+            return
+            
+        # Extract frequency history data
+        times, freqs = zip(*cpu.frequency_history)
+        
+        # Plot frequency usage
+        self.freq_ax.step(
+            times, 
+            freqs, 
+            where='post',
+            label="CPU Frequency",
+            color='#9b59b6',
+            linewidth=2
+        )
+        
+        # Configure plot
+        self.freq_ax.set_facecolor('#f5f5f5')
+        self.freq_ax.grid(True, linestyle='--', alpha=0.6)
+        self.freq_ax.set_xlabel("Time (units)", fontsize=10)
+        self.freq_ax.set_ylabel("Frequency (GHz)", fontsize=10)
+        self.freq_ax.set_title("CPU Frequency Usage Over Time", fontsize=12, pad=10)
+        self.freq_ax.legend(loc='upper right')
+        self.freq_ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        self.freq_ax.set_ylim(0, cpu.max_frequency * 1.1)
+        
+        # Redraw canvas
+        self.freq_canvas.draw()
 
-        # Display process execution details in the result table
-        for row in result_table.get_children():
-            result_table.delete(row)
-        for process in completed_processes:
-            turnaround_time = process.finish_time - process.arrival_time
-            waiting_time = turnaround_time - process.burst_time
-            result_table.insert("", "end", values=(
-                process.pid, process.start_time, process.finish_time,
-                turnaround_time, waiting_time
-            ))
-
-        # Display performance metrics
-        total_turnaround_time = sum(p.finish_time - p.arrival_time for p in completed_processes)
-        total_waiting_time = sum((p.finish_time - p.arrival_time - p.burst_time) for p in completed_processes)
-        avg_turnaround_time = total_turnaround_time / len(completed_processes)
-        avg_waiting_time = total_waiting_time / len(completed_processes)
-
-        label_avg_turnaround.config(text=f"Average Turnaround Time: {avg_turnaround_time:.2f}")
-        label_avg_waiting.config(text=f"Average Waiting Time: {avg_waiting_time:.2f}")
-        label_power_consumption.config(text=f"Total Power Consumption: {cpu.power_consumption:.2f} Joules")
-        label_idle_time.config(text=f"CPU Idle Time: {cpu.idle_time} units")
-
-        # Visualize power consumption and Gantt chart
-        visualize_power_consumption(completed_processes, cpu)
-        visualize_gantt_chart(completed_processes)
-
-    except Exception as e:
-        messagebox.showerror("Error", str(e))
-
-# Function to visualize power consumption
-def visualize_power_consumption(completed_processes, cpu):
-    time_points = np.arange(0, max(p.finish_time for p in completed_processes) + 1)
-    power_consumption = [cpu.base_power * (cpu.current_frequency / cpu.max_frequency) for _ in time_points]
-
-    fig, ax = plt.subplots()
-    ax.plot(time_points, power_consumption, label="Power Consumption")
-    ax.set_xlabel("Time")
-    ax.set_ylabel("Power (Watts)")
-    ax.set_title("CPU Power Consumption Over Time")
-    ax.legend()
-
-    # Embed the plot in the GUI
-    for widget in frame_graph.winfo_children():
-        widget.destroy()
-    canvas = FigureCanvasTkAgg(fig, master=frame_graph)
-    canvas.draw()
-    canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-
-# Function to visualize Gantt chart
-def visualize_gantt_chart(completed_processes):
-    fig, ax = plt.subplots()
-    start_times = [p.start_time for p in completed_processes]
-    burst_times = [p.burst_time for p in completed_processes]
-    pids = [p.pid for p in completed_processes]
-
-    ax.barh(pids, burst_times, left=start_times, color='skyblue', edgecolor='black')
-    ax.set_xlabel("Time")
-    ax.set_ylabel("Processes")
-    ax.set_title("Gantt Chart")
-    ax.invert_yaxis()
-
-    # Embed the Gantt chart in the GUI
-    for widget in frame_gantt.winfo_children():
-        widget.destroy()
-    canvas = FigureCanvasTkAgg(fig, master=frame_gantt)
-    canvas.draw()
-    canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-
-# Create the main window
-root = tk.Tk()
-root.title("Energy-Efficient CPU Scheduling")
-
-# Frame for process input
-frame_input = ttk.LabelFrame(root, text="Process Input")
-frame_input.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
-
-# Table for process details
-columns = ("PID", "Arrival Time", "Burst Time", "Priority")
-process_table = ttk.Treeview(frame_input, columns=columns, show="headings")
-for col in columns:
-    process_table.heading(col, text=col)
-process_table.grid(row=0, column=0, padx=10, pady=10)
-
-# Frame for time quantum input
-frame_quantum = ttk.LabelFrame(root, text="Time Quantum")
-frame_quantum.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
-
-label_time_quantum = ttk.Label(frame_quantum, text="Time Quantum:")
-label_time_quantum.grid(row=0, column=0, padx=10, pady=10)
-entry_time_quantum = ttk.Entry(frame_quantum)
-entry_time_quantum.insert(0, "3")
-entry_time_quantum.grid(row=0, column=1, padx=10, pady=10)
-
-# Button to run the simulation
-button_run = ttk.Button(root, text="Run Simulation", command=run_simulation)
-button_run.grid(row=2, column=0, padx=10, pady=10)
-
-# Frame for results
-frame_results = ttk.LabelFrame(root, text="Results")
-frame_results.grid(row=3, column=0, padx=10, pady=10, sticky="ew")
-
-# Frame for power consumption graph
-frame_graph = ttk.LabelFrame(root, text="Power Consumption Graph")
-frame_graph.grid(row=4, column=0, padx=10, pady=10, sticky="ew")
-
-# Frame for Gantt chart
-frame_gantt = ttk.LabelFrame(root, text="Gantt Chart")
-frame_gantt.grid(row=5, column=0, padx=10, pady=10, sticky="ew")
-
-# Start the main loop
-root.mainloop()
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = EnergyEfficientSchedulerGUI(root)
+    root.mainloop()
