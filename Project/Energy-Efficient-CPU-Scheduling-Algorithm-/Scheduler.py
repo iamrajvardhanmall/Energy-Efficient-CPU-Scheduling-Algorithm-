@@ -3,7 +3,7 @@
 
 
 
-# Module 1: Algorithm Design and Implementation (C++)
+# Module 1: Algorithm Design and Implementation (Python)
 # This module implements the Energy-Efficient Round Robin (EE-RR) algorithm with Dynamic Frequency Scaling (DVFS) and Idle State Optimization.
 
 
