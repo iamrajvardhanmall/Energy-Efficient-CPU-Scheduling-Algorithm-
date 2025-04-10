@@ -243,10 +243,12 @@ class EnergyEfficientSchedulerGUI:
         # CPU parameters
         ttk.Label(self.control_frame, text="CPU Parameters", style='Header.TLabel').grid(row=1, column=0, columnspan=2, pady=10)
         
+        """CPU Base Power refers to the minimum guaranteed power consumption (in watts) that a CPU is designed to use under typical workloads 
+        when operating at its base clock speed. It is also sometimes called TDP (Thermal Design Power) or PL1 (Power Level 1) in Intel processors."""
         # Create CPU parameter variables
-        self.base_power_var = tk.DoubleVar(value=100)
-        self.max_freq_var = tk.DoubleVar(value=3.0)
-        self.min_freq_var = tk.DoubleVar(value=1.0)
+        self.base_power_var = tk.DoubleVar(value=125)   #Intel Core i9-13900K: 125W TDP
+        self.max_freq_var = tk.DoubleVar(value=5.8)   # Intel Core i9-13900K: 5.8 GHz max turbo frequency
+        self.min_freq_var = tk.DoubleVar(value=3.0)  # Intel Core i9-13900K: 3.0 GHz base frequency
         
         param_labels = ["Base Power (W):", "Max Freq (GHz):", "Min Freq (GHz):"]
         param_vars = [self.base_power_var, self.max_freq_var, self.min_freq_var]
