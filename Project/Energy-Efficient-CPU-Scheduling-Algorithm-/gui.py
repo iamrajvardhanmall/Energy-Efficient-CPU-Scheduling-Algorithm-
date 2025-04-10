@@ -1,9 +1,12 @@
-# gui.py
-import tkinter as tk
+import tkinter as tk   
+# Tkinter is Python's standard GUI (Graphical User Interface) package. 
+# It's a thin object-oriented layer on top of Tcl/Tk that makes it easy to create desktop applications with Python.
 from tkinter import ttk, messagebox, filedialog
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import numpy as np
+# JSON (JavaScript Object Notation)
+# JSON is a lightweight data interchange format that's easy for humans to read and write, and easy for machines to parse and generate.
 import json
 from scheduler import Process, CPU, round_robin_scheduling
 from matplotlib.ticker import MaxNLocator
@@ -58,10 +61,7 @@ class EnergyEfficientSchedulerGUI:
         self.visualization_frame = ttk.LabelFrame(self.right_frame, text="Visualizations", padding=10)
         self.create_visualization_widgets()
         
-        # Status bar
-        self.status_var = tk.StringVar()
-        self.status_var.set("Ready")
-        self.status_bar = ttk.Label(self.root, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W)
+
     
     def create_process_input_widgets(self):
         """Create widgets for process input"""
@@ -148,11 +148,11 @@ class EnergyEfficientSchedulerGUI:
             # Auto-increment PID
             self.pid_var.set(pid + 1)
             
-            self.status_var.set(f"Added process {pid}")
+
         
         except Exception as e:
             messagebox.showerror("Error", str(e))
-            self.status_var.set("Error adding process")
+
     
     def remove_process(self):
         """Remove selected process from the table"""
@@ -163,17 +163,17 @@ class EnergyEfficientSchedulerGUI:
             
             pid = self.process_table.item(selected_item)['values'][0]
             self.process_table.delete(selected_item)
-            self.status_var.set(f"Removed process {pid}")
+
         
         except Exception as e:
             messagebox.showerror("Error", str(e))
-            self.status_var.set("Error removing process")
+
     
     def clear_processes(self):
         """Clear all processes from the table"""
         for item in self.process_table.get_children():
             self.process_table.delete(item)
-        self.status_var.set("Cleared all processes")
+
     
     def import_processes(self):
         """Import processes from a JSON file"""
@@ -194,11 +194,11 @@ class EnergyEfficientSchedulerGUI:
                     proc['pid'], proc['arrival'], proc['burst'], proc['priority']
                 ))
             
-            self.status_var.set(f"Imported {len(processes)} processes from {filepath}")
+
         
         except Exception as e:
             messagebox.showerror("Import Error", str(e))
-            self.status_var.set("Error importing processes")
+
     
     def export_processes(self):
         """Export processes to a JSON file"""
@@ -227,11 +227,11 @@ class EnergyEfficientSchedulerGUI:
             with open(filepath, 'w') as f:
                 json.dump(processes, f, indent=2)
             
-            self.status_var.set(f"Exported {len(processes)} processes to {filepath}")
+
         
         except Exception as e:
             messagebox.showerror("Export Error", str(e))
-            self.status_var.set("Error exporting processes")
+
 
     def create_control_widgets(self):
         """Create widgets for simulation controls"""
@@ -402,8 +402,7 @@ class EnergyEfficientSchedulerGUI:
         self.result_frame.pack(fill=tk.BOTH, padx=5, pady=5, expand=False)
         self.visualization_frame.pack(fill=tk.BOTH, padx=5, pady=5, expand=True)
         
-        # Status bar
-        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
     
     def run_simulation(self):
         """Run the scheduling simulation"""
@@ -464,11 +463,11 @@ class EnergyEfficientSchedulerGUI:
             # Update visualizations
             self.update_visualizations(completed_processes, cpu)
             
-            self.status_var.set("Simulation completed successfully")
+
         
         except Exception as e:
             messagebox.showerror("Simulation Error", str(e))
-            self.status_var.set("Error running simulation")
+
 
     def update_visualizations(self, completed_processes, cpu):
         """Update all visualization tabs with simulation results"""
@@ -516,6 +515,11 @@ class EnergyEfficientSchedulerGUI:
         self.power_ax.legend(loc='upper right')
         self.power_ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         
+        # Adjust plot margins and layout
+        if times:  # Only if we have data points
+            self.power_ax.set_xlim(-0.5, max(times) + 0.5)  # Set x-axis limits with small padding
+        self.power_fig.tight_layout()  # Adjust layout to remove extra space
+        
         # Redraw canvas
         self.power_canvas.draw()
     
@@ -525,6 +529,7 @@ class EnergyEfficientSchedulerGUI:
         
         # Prepare data
         pids = [f"P{p.pid}" for p in completed_processes]
+        pids.append("CPU")  # Add a row for CPU utilization
         
         # Create color map based on priority
         colors = ['#2ecc71' if p.priority == 1 else '#f39c12' for p in completed_processes]
@@ -541,6 +546,42 @@ class EnergyEfficientSchedulerGUI:
                     height=0.6,
                     alpha=0.8
                 )
+
+        
+        # Find and plot idle intervals
+        if completed_processes:
+            max_time = max(end for p in completed_processes for _, end in p.execution_history)
+            busy_intervals = sorted([(start, end) for p in completed_processes for start, end in p.execution_history])
+            current_time = 0
+            
+            # Plot idle intervals
+            for start, end in busy_intervals:
+                if start > current_time:
+                    # There's an idle interval
+                    self.gantt_ax.barh(
+                        "CPU",
+                        start - current_time,
+                        left=current_time,
+                        color='#e74c3c',  # Red for idle time
+                        edgecolor='#34495e',
+                        height=0.6,
+                        alpha=0.4,
+                        hatch='//'
+                    )
+                current_time = max(current_time, end)
+            
+            # Check for idle time after last process
+            if current_time < max_time:
+                self.gantt_ax.barh(
+                    "CPU",
+                    max_time - current_time,
+                    left=current_time,
+                    color='#e74c3c',  # Red for idle time
+                    edgecolor='#34495e',
+                    height=0.6,
+                    alpha=0.4,
+                    hatch='//'
+                )
         
         # Configure plot
         self.gantt_ax.set_facecolor('#f5f5f5')
@@ -551,12 +592,20 @@ class EnergyEfficientSchedulerGUI:
         self.gantt_ax.invert_yaxis()
         self.gantt_ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         
-        # Create legend for priorities
+        # Adjust plot margins and layout
+        if completed_processes:
+            max_time = max(end for p in completed_processes for _, end in p.execution_history)
+            self.gantt_ax.set_xlim(-0.5, max_time + 0.5)  # Set x-axis limits with small padding
+        self.gantt_fig.tight_layout()  # Adjust layout to remove extra space
+        
+        # Create legend
         high_priority = plt.Rectangle((0,0), 1, 1, fc='#2ecc71', alpha=0.8)
         low_priority = plt.Rectangle((0,0), 1, 1, fc='#f39c12', alpha=0.8)
+        cpu_idle = plt.Rectangle((0,0), 1, 1, fc='#e74c3c', alpha=0.4, hatch='//')
+        
         self.gantt_ax.legend(
-            [high_priority, low_priority], 
-            ['High Priority', 'Low Priority'],
+            [high_priority, low_priority, cpu_idle], 
+            ['High Priority', 'Low Priority', 'CPU Idle'],
             loc='upper right'
         )
         
