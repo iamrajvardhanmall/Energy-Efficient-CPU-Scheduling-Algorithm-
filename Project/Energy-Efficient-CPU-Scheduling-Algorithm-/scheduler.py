@@ -1,5 +1,5 @@
 # The code is divided into three modules: Algorithm Design, Simulation Environment, and Performance Analysis. 
-# The implementation uses C++ for the scheduling algorithm and Python for simulation and visualization.
+# The implementation uses pyhton for the scheduling algorithm and Python for simulation and visualization.
 
 
 
