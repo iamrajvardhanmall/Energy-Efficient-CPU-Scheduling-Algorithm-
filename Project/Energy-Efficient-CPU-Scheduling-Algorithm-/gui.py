@@ -27,17 +27,87 @@ class EnergyEfficientSchedulerGUI:
         self.processes = []
         
     def configure_styles(self):
-        """Configure custom styles for the GUI"""
-        self.style.configure('TFrame', background='#f5f5f5')
-        self.style.configure('TLabel', background='#f5f5f5', font=('Segoe UI', 10))
-        self.style.configure('TButton', font=('Segoe UI', 10), padding=5)
-        self.style.configure('Header.TLabel', font=('Segoe UI', 12, 'bold'))
-        self.style.configure('Treeview', rowheight=25, font=('Segoe UI', 9))
+        """Configure custom styles for the GUI with modern aesthetics"""
+        # Define color scheme
+        self.colors = {
+            'primary': '#2c3e50',    # Dark blue-gray
+            'secondary': '#3498db',   # Bright blue
+            'accent': '#e74c3c',     # Red
+            'background': '#ecf0f1',  # Light gray
+            'text': '#2c3e50',       # Dark blue-gray
+            'success': '#2ecc71'     # Green
+        }
+
+        # Configure main styles
+        self.style.configure('TFrame', background=self.colors['background'])
+        self.style.configure('TLabel', 
+            background=self.colors['background'],
+            foreground=self.colors['text'],
+            font=('Segoe UI', 10)
+        )
+        
+        # Modern button style
+        self.style.configure('TButton',
+            font=('Segoe UI', 10),
+            padding=8,
+            background=self.colors['secondary'],
+            foreground='white'
+        )
+        
+        # Hover effect for buttons
         self.style.map('TButton',
-                      foreground=[('active', 'black'), ('disabled', 'gray')],
-                      background=[('active', '#e1e1e1'), ('disabled', '#f5f5f5')])
-        self.style.configure('TNotebook', background='#f5f5f5')
-        self.style.configure('TNotebook.Tab', font=('Segoe UI', 10, 'bold'))
+            foreground=[('active', 'white'), ('disabled', 'gray')], 
+            background=[('active', self.colors['primary']), ('disabled', '#bdc3c7')]
+        )
+
+        # Header style
+        self.style.configure('Header.TLabel',
+            font=('Segoe UI Semibold', 12),
+            foreground=self.colors['primary'],
+            padding=5
+        )
+
+        # Modern Treeview style
+        self.style.configure('Treeview',
+            background='white',
+            fieldbackground='white',
+            rowheight=30,
+            font=('Segoe UI', 9)
+        )
+        
+        self.style.map('Treeview',
+            background=[('selected', self.colors['secondary'])],
+            foreground=[('selected', 'white')]
+        )
+
+        # Notebook styling
+        self.style.configure('TNotebook',
+            background=self.colors['background'],
+            tabmargins=[2, 5, 2, 0]
+        )
+        
+        self.style.configure('TNotebook.Tab',
+            font=('Segoe UI', 10),
+            padding=[15, 5],
+            background=self.colors['background']
+        )
+        
+        self.style.map('TNotebook.Tab',
+            background=[('selected', self.colors['secondary'])],
+            foreground=[('selected', 'white'), ('!selected', self.colors['text'])]
+        )
+
+        # LabelFrame styling
+        self.style.configure('TLabelframe',
+            background=self.colors['background'],
+            padding=10
+        )
+        
+        self.style.configure('TLabelframe.Label',
+            font=('Segoe UI Semibold', 11),
+            foreground=self.colors['primary'],
+            background=self.colors['background']
+        )
     
     def create_widgets(self):
         """Create all GUI widgets"""
@@ -61,6 +131,7 @@ class EnergyEfficientSchedulerGUI:
         self.visualization_frame = ttk.LabelFrame(self.right_frame, text="Visualizations", padding=10)
         self.create_visualization_widgets()
         
+
 
     
     def create_process_input_widgets(self):
@@ -149,9 +220,11 @@ class EnergyEfficientSchedulerGUI:
             self.pid_var.set(pid + 1)
             
 
+
         
         except Exception as e:
             messagebox.showerror("Error", str(e))
+
 
     
     def remove_process(self):
@@ -164,15 +237,18 @@ class EnergyEfficientSchedulerGUI:
             pid = self.process_table.item(selected_item)['values'][0]
             self.process_table.delete(selected_item)
 
+
         
         except Exception as e:
             messagebox.showerror("Error", str(e))
+
 
     
     def clear_processes(self):
         """Clear all processes from the table"""
         for item in self.process_table.get_children():
             self.process_table.delete(item)
+
 
     
     def import_processes(self):
@@ -195,9 +271,11 @@ class EnergyEfficientSchedulerGUI:
                 ))
             
 
+
         
         except Exception as e:
             messagebox.showerror("Import Error", str(e))
+
 
     
     def export_processes(self):
@@ -228,9 +306,11 @@ class EnergyEfficientSchedulerGUI:
                 json.dump(processes, f, indent=2)
             
 
+
         
         except Exception as e:
             messagebox.showerror("Export Error", str(e))
+
 
 
     def create_control_widgets(self):
@@ -390,18 +470,24 @@ class EnergyEfficientSchedulerGUI:
         self.visualization_notebook.add(self.freq_tab, text="Frequency Usage")
     
     def setup_layout(self):
-        """Arrange widgets in the window"""
-        self.left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=False)
-        self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+        """Arrange widgets with proper spacing"""
+        # Configure grid weights
+        self.root.grid_columnconfigure(1, weight=1)
+        self.root.grid_rowconfigure(0, weight=1)
         
-        # Left frame contents
-        self.input_frame.pack(fill=tk.BOTH, padx=5, pady=5, expand=False)
-        self.control_frame.pack(fill=tk.BOTH, padx=5, pady=5, expand=False)
+        # Add padding around main frames
+        self.left_frame.grid(row=0, column=0, padx=20, pady=20, sticky='nsew')
+        self.right_frame.grid(row=0, column=1, padx=20, pady=20, sticky='nsew')
         
-        # Right frame contents
-        self.result_frame.pack(fill=tk.BOTH, padx=5, pady=5, expand=False)
-        self.visualization_frame.pack(fill=tk.BOTH, padx=5, pady=5, expand=True)
+        # Left frame contents with spacing
+        self.input_frame.pack(fill=tk.BOTH, padx=5, pady=10, expand=False)
+        self.control_frame.pack(fill=tk.BOTH, padx=5, pady=10, expand=False)
         
+        # Right frame contents with spacing
+        self.result_frame.pack(fill=tk.BOTH, padx=5, pady=10, expand=False)
+        self.visualization_frame.pack(fill=tk.BOTH, padx=5, pady=10, expand=True)
+        
+
 
     
     def run_simulation(self):
@@ -464,9 +550,11 @@ class EnergyEfficientSchedulerGUI:
             self.update_visualizations(completed_processes, cpu)
             
 
+
         
         except Exception as e:
             messagebox.showerror("Simulation Error", str(e))
+
 
 
     def update_visualizations(self, completed_processes, cpu):
@@ -487,40 +575,49 @@ class EnergyEfficientSchedulerGUI:
         self.update_frequency_plot(cpu)
     
     def update_power_plot(self, cpu):
-        """Update the power consumption plot"""
+        """Update the power consumption plot with enhanced styling"""
         self.power_ax.clear()
         
-        # Extract power history data
         if not cpu.power_history:
             return
-            
+        
         times, powers = zip(*cpu.power_history)
         
-        # Plot with enhanced styling
-        self.power_ax.step(
+        # Plot with gradient fill
+        self.power_ax.fill_between(
             times, 
-            powers, 
-            where='post',
-            label="Power Consumption",
-            color='#3498db',
-            linewidth=2
+            powers,
+            alpha=0.3,
+            color=self.colors['secondary']
         )
         
-        # Configure plot
-        self.power_ax.set_facecolor('#f5f5f5')
-        self.power_ax.grid(True, linestyle='--', alpha=0.6)
-        self.power_ax.set_xlabel("Time (units)", fontsize=10)
-        self.power_ax.set_ylabel("Power (Watts)", fontsize=10)
-        self.power_ax.set_title("CPU Power Consumption Over Time", fontsize=12, pad=10)
-        self.power_ax.legend(loc='upper right')
-        self.power_ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        self.power_ax.plot(
+            times,
+            powers,
+            color=self.colors['secondary'],
+            linewidth=2,
+            label="Power Consumption"
+        )
         
-        # Adjust plot margins and layout
-        if times:  # Only if we have data points
-            self.power_ax.set_xlim(-0.5, max(times) + 0.5)  # Set x-axis limits with small padding
-        self.power_fig.tight_layout()  # Adjust layout to remove extra space
+        # Style the plot
+        self.power_ax.set_facecolor('white')
+        self.power_ax.grid(True, linestyle='--', alpha=0.2, color='gray')
+        self.power_ax.set_xlabel("Time (units)", fontsize=10, color=self.colors['text'])
+        self.power_ax.set_ylabel("Power (Watts)", fontsize=10, color=self.colors['text'])
+        self.power_ax.set_title(
+            "CPU Power Consumption Over Time",
+            fontsize=12,
+            color=self.colors['primary'],
+            pad=15,
+            fontweight='bold'
+        )
         
-        # Redraw canvas
+        # Style the spines
+        for spine in self.power_ax.spines.values():
+            spine.set_color(self.colors['text'])
+            spine.set_linewidth(0.5)
+        
+        self.power_fig.patch.set_facecolor(self.colors['background'])
         self.power_canvas.draw()
     
     def update_gantt_chart(self, completed_processes):
@@ -546,6 +643,7 @@ class EnergyEfficientSchedulerGUI:
                     height=0.6,
                     alpha=0.8
                 )
+
 
         
         # Find and plot idle intervals
