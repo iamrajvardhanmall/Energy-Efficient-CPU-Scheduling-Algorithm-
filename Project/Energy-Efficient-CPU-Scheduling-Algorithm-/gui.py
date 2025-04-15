@@ -28,85 +28,90 @@ class EnergyEfficientSchedulerGUI:
         
     def configure_styles(self):
         """Configure custom styles for the GUI with modern aesthetics"""
-        # Define color scheme
+        # Updated modern color scheme
         self.colors = {
-            'primary': '#2c3e50',    # Dark blue-gray
-            'secondary': '#3498db',   # Bright blue
-            'accent': '#e74c3c',     # Red
-            'background': '#ecf0f1',  # Light gray
-            'text': '#2c3e50',       # Dark blue-gray
-            'success': '#2ecc71'     # Green
+            'primary': '#1a237e',    # Deep Blue
+            'secondary': '#0d47a1',  # Rich Blue
+            'accent': '#2962ff',     # Bright Blue
+            'background': '#f5f6fa', # Light Gray-Blue
+            'surface': '#ffffff',    # White
+            'text': '#2c3e50',      # Dark Gray
+            'success': '#00c853',    # Green
+            'warning': '#ffd600',    # Yellow
+            'error': '#d50000',     # Red
+            'idle': '#ffecb3'       # Light Yellow
         }
 
-        # Configure main styles
-        self.style.configure('TFrame', background=self.colors['background'])
-        self.style.configure('TLabel', 
+        # Configure main styles with shadows and rounded corners
+        self.style.configure('Custom.TFrame',
             background=self.colors['background'],
-            foreground=self.colors['text'],
-            font=('Segoe UI', 10)
-        )
-        
-        # Modern button style
-        self.style.configure('TButton',
-            font=('Segoe UI', 10),
-            padding=8,
-            background=self.colors['secondary'],
-            foreground='white'
-        )
-        
-        # Hover effect for buttons
-        self.style.map('TButton',
-            foreground=[('active', 'white'), ('disabled', 'gray')], 
-            background=[('active', self.colors['primary']), ('disabled', '#bdc3c7')]
+            relief='solid',
+            borderwidth=1,
+            bordercolor=self.colors['primary']
         )
 
-        # Header style
-        self.style.configure('Header.TLabel',
-            font=('Segoe UI Semibold', 12),
-            foreground=self.colors['primary'],
+        # Modern label style
+        self.style.configure('Custom.TLabel',
+            background=self.colors['background'],
+            foreground=self.colors['text'],
+            font=('Segoe UI', 10),
             padding=5
         )
 
-        # Modern Treeview style
-        self.style.configure('Treeview',
-            background='white',
-            fieldbackground='white',
-            rowheight=30,
-            font=('Segoe UI', 9)
-        )
-        
-        self.style.map('Treeview',
-            background=[('selected', self.colors['secondary'])],
-            foreground=[('selected', 'white')]
+        # Enhanced button style
+        self.style.configure('Custom.TButton',
+            font=('Segoe UI Semibold', 10),
+            padding=(15, 8),
+            background=self.colors['accent'],
+            foreground='white',
+            borderwidth=0,
+            relief='flat'
         )
 
-        # Notebook styling
-        self.style.configure('TNotebook',
-            background=self.colors['background'],
-            tabmargins=[2, 5, 2, 0]
-        )
-        
-        self.style.configure('TNotebook.Tab',
-            font=('Segoe UI', 10),
-            padding=[15, 5],
-            background=self.colors['background']
-        )
-        
-        self.style.map('TNotebook.Tab',
-            background=[('selected', self.colors['secondary'])],
-            foreground=[('selected', 'white'), ('!selected', self.colors['text'])]
+        # Button hover effects
+        self.style.map('Custom.TButton',
+            background=[('active', self.colors['primary']), 
+                       ('disabled', '#bdc3c7')],
+            foreground=[('active', 'white'), 
+                       ('disabled', '#95a5a6')]
         )
 
-        # LabelFrame styling
-        self.style.configure('TLabelframe',
+        # Modern header style
+        self.style.configure('Header.TLabel',
+            font=('Segoe UI', 14, 'bold'),
+            foreground=self.colors['primary'],
             background=self.colors['background'],
             padding=10
         )
+
+        # Enhanced Treeview style
+        self.style.configure('Custom.Treeview',
+            background=self.colors['surface'],
+            fieldbackground=self.colors['surface'],
+            foreground=self.colors['text'],
+            rowheight=35,
+            font=('Segoe UI', 10),
+            borderwidth=0
+        )
         
-        self.style.configure('TLabelframe.Label',
-            font=('Segoe UI Semibold', 11),
-            foreground=self.colors['primary'],
-            background=self.colors['background']
+        self.style.configure('Custom.Treeview.Heading',
+            font=('Segoe UI Semibold', 10),
+            background=self.colors['primary'],
+            foreground='white',
+            padding=5
+        )
+
+        # Tab styling
+        self.style.configure('Custom.TNotebook',
+            background=self.colors['background'],
+            tabmargins=[5, 5, 2, 0]
+        )
+
+        self.style.configure('Custom.TNotebook.Tab',
+            font=('Segoe UI', 10),
+            padding=[20, 8],
+            background=self.colors['surface'],
+            foreground=self.colors['text']
         )
     
     def create_widgets(self):
