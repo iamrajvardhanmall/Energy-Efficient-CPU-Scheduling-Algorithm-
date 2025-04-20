@@ -1,22 +1,11 @@
 # The code is divided into three modules: Algorithm Design, Simulation Environment, and Performance Analysis. 
-# The implementation uses pyhton for the scheduling algorithm and Python for simulation and visualization.
-
-
 
 # Module 1: Algorithm Design and Implementation (Python)
-# This module implements the Energy-Efficient Round Robin (EE-RR) algorithm with Dynamic Frequency Scaling (DVFS) and Idle State Optimization.
+# This module implements the Energy-Efficient Round Robin (EE-RR) algorithm with Dynamic voltage and Frequency Scaling (DVFS) and Idle State Optimization.
+# The algorithm is designed to minimize energy consumption while maintaining performance.
 
-
-# scheduler.py
 class Process:
     def __init__(self, pid, arrival_time, burst_time, priority):
-        """
-        Initialize a process with:
-        - pid: Process ID
-        - arrival_time: Time when process arrives in the system
-        - burst_time: Total CPU time required by the process
-        - priority: Process priority (lower value = higher priority)
-        """
         self.pid = pid       
         self.arrival_time = arrival_time
         self.burst_time = burst_time
@@ -30,18 +19,11 @@ class Process:
         return f"Process {self.pid}: Arrival={self.arrival_time}, Burst={self.burst_time}, Priority={self.priority}"
 
     def add_execution_interval(self, start, end):
-        """Record an execution interval for this process"""
         self.execution_history.append((start, end))
 
 
 class CPU:
     def __init__(self, base_power, max_frequency, min_frequency):
-        """
-        Initialize CPU with:
-        - base_power: Base power consumption in Watts at max frequency
-        - max_frequency: Maximum CPU frequency in GHz
-        - min_frequency: Minimum CPU frequency in GHz
-        """
         self.base_power = base_power
         self.max_frequency = max_frequency
         self.min_frequency = min_frequency
@@ -52,10 +34,6 @@ class CPU:
         self.power_history = []  # Tracks power consumption over time
 
     def execute(self, process, time_quantum, current_time):
-        """
-        Execute a process for a given time quantum and update power consumption
-        Returns the actual execution time (may be less than quantum if process finishes)
-        """
         execution_time = min(time_quantum, process.remaining_time)
         process.remaining_time -= execution_time
 
