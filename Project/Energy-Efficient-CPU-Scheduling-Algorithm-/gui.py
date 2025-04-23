@@ -10,6 +10,14 @@ import numpy as np
 import json
 from scheduler import Process, CPU, round_robin_scheduling
 from matplotlib.ticker import MaxNLocator
+# tkinter: The standard Python GUI library for creating desktop applications.
+# ttk: Themed Tkinter widgets for a more modern look.
+# messagebox and filedialog: Tkinter modules for displaying message boxes and file dialogs.
+# matplotlib: A plotting library for creating visualizations.
+# FigureCanvasTkAgg and NavigationToolbar2Tk: Matplotlib components for embedding plots in Tkinter and adding navigation tools.
+# numpy: A library for numerical operations.
+# json: For handling JSON data (likely for saving/loading process schedules).
+# scheduler: A custom module (not shown here) that defines Process, CPU, and round_robin_scheduling classes/functions.
 
 class EnergyEfficientSchedulerGUI:
     def __init__(self, root):
