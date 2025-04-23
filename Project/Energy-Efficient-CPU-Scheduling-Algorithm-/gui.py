@@ -254,8 +254,6 @@ class EnergyEfficientSchedulerGUI:
         for item in self.process_table.get_children():
             self.process_table.delete(item)
 
-
-    
     def import_processes(self):
         """Import processes from a JSON file"""
         try:
