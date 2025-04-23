@@ -1,6 +1,4 @@
-# The code is divided into three modules: Algorithm Design, Simulation Environment, and Performance Analysis. 
 
-# Module 1: Algorithm Design and Implementation (Python)
 # This module implements the Energy-Efficient Round Robin (EE-RR) algorithm with Dynamic voltage and Frequency Scaling (DVFS) and Idle State Optimization.
 # The algorithm is designed to minimize energy consumption while maintaining performance.
 
