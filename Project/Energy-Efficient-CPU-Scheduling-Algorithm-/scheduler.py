@@ -17,7 +17,7 @@ class Process:
 
     def add_execution_interval(self, start, end):
         self.execution_history.append((start, end))
-
+        
 
 class CPU:
     def __init__(self, base_power, max_frequency, min_frequency):
